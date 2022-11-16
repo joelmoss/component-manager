@@ -31,7 +31,7 @@ export default async (opts = {}) => {
 
   if (nodes.length < 1) return;
 
-  const { lazy, createElement } = await import("react");
+  const { Suspense, lazy, createElement } = await import("react");
   const { createRoot } = await import("react-dom/client");
   const Manager = lazy(() => import("./manager"));
 
@@ -73,7 +73,11 @@ export default async (opts = {}) => {
   const rootEle = document.createElement("div");
   document.body.append(rootEle);
   createRoot(rootEle).render(
-    createElement(Manager, { components, wrapper, debug: options.debug })
+    createElement(
+      Suspense,
+      null,
+      createElement(Manager, { components, wrapper, debug: options.debug })
+    )
   );
 };
 
