@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 
+import { Fragment } from "react";
+
 /**
  * Initialize the component manager by creating a single React root in a div that is appended to the
  * document body, and rendering the `Manager` component within it. If no component skels are found
@@ -10,13 +12,15 @@
  *   Each match will be loaded as a component. Default: '.componentManagedByProscenium'.
  * @param {function} options.buildComponentPath - If defined, will be called with the component
  *   path, and should return a new path. Can be used to rewrite the import path of components.
- * @param {string,Promise,Function} option.wrapWithComponent - Wrap each component with another.
+ * @param {string,Promise,Function} options.wrapWithComponent - Wrap each component with another.
  *   If a String, it should be a path to a module that will be dynamically imported and wrapped with
  *   React's `lazy` helper.
  *   If a function, that function should return a dynamic `import()` of the component you want to
  *   wrap with.
  *   If a promise, it should be result of a dynamic `import()`.
- * @param {boolean} option.debug - Will output debugging info to the console. Default: false.
+ * @param {string,Promise,Function} options.wrapEachWithComponent - Like options.wrapWithComponent
+ *   above, but wraps each and every component.
+ * @param {boolean} options.debug - Will output debugging info to the console. Default: false.
  */
 export default async (opts = {}) => {
   const options = {
@@ -48,6 +52,19 @@ export default async (opts = {}) => {
     }
   }
 
+  let EachWrapper = Fragment;
+  if (options.wrapEachWithComponent) {
+    EachWrapper = buildImport(options.wrapEachWithComponent);
+    if (typeof EachWrapper === "undefined") {
+      console.warn(
+        "[@proscenium/component-manager] `wrapEachWithComponent` option was passed to `init()` with an",
+        "invalid type, so is ignored. Ensure it is a String, import(), or function."
+      );
+    } else {
+      EachWrapper = lazy(EachWrapper);
+    }
+  }
+
   // Find our components to load.
   const components = Array.from(nodes, (domElement) => {
     const { path, props, ...params } = JSON.parse(domElement.dataset.component);
@@ -76,7 +93,12 @@ export default async (opts = {}) => {
     createElement(
       Suspense,
       null,
-      createElement(Manager, { components, wrapper, debug: options.debug })
+      createElement(Manager, {
+        components,
+        wrapper,
+        EachWrapper,
+        debug: options.debug,
+      })
     )
   );
 };

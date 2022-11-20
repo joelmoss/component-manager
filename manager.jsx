@@ -1,12 +1,12 @@
 import { Suspense, createElement, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 
-const Manager = ({ components, wrapper, debug }) => {
+const Manager = ({ components, wrapper, EachWrapper, debug }) => {
   const mappedComponents = components.map((comp, key) =>
     comp.lazy ? (
-      <Observed key={key} debug={debug} {...comp} />
+      <Observed {...{ key, debug, EachWrapper }} {...comp} />
     ) : (
-      <Portaled key={key} debug={debug} {...comp} />
+      <Portaled {...{ key, debug, EachWrapper }} {...comp} />
     )
   );
 
@@ -17,7 +17,14 @@ const Manager = ({ components, wrapper, debug }) => {
   }
 };
 
-const Portaled = ({ component, path, debug, domElement, props }) => {
+const Portaled = ({
+  component,
+  path,
+  debug,
+  EachWrapper,
+  domElement,
+  props,
+}) => {
   const content = domElement.hasChildNodes() && domElement.firstElementChild;
   let shownDebugMsg = false;
 
@@ -36,13 +43,19 @@ const Portaled = ({ component, path, debug, domElement, props }) => {
 
   return createPortal(
     <Suspense fallback={<Fallback content={content} />}>
-      {createElement(component, props)}
+      <EachWrapper>{createElement(component, props)}</EachWrapper>
     </Suspense>,
     domElement
   );
 };
 
-const Observed = ({ domElement, debug, componentPath, ...comp }) => {
+const Observed = ({
+  domElement,
+  debug,
+  EachWrapper,
+  componentPath,
+  ...comp
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const observer = useMemo(() => {
     return new IntersectionObserver((entries) => {
@@ -65,7 +78,12 @@ const Observed = ({ domElement, debug, componentPath, ...comp }) => {
 
   if (!isVisible) return null;
 
-  return <Portaled {...{ domElement, componentPath, debug }} {...comp} />;
+  return (
+    <Portaled
+      {...{ domElement, componentPath, EachWrapper, debug }}
+      {...comp}
+    />
+  );
 };
 
 const Fallback = ({ content }) => {
