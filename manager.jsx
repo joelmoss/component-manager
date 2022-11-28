@@ -4,9 +4,9 @@ import { createPortal } from "react-dom";
 const Manager = ({ components, wrapper, EachWrapper, debug }) => {
   const mappedComponents = components.map((comp, key) =>
     comp.lazy ? (
-      <Observed {...{ key, debug, EachWrapper }} {...comp} />
+      <Observed key={key} debug={debug} EachWrapper={EachWrapper} {...comp} />
     ) : (
-      <Portaled {...{ key, debug, EachWrapper }} {...comp} />
+      <Portaled key={key} debug={debug} EachWrapper={EachWrapper} {...comp} />
     )
   );
 
