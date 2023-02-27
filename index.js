@@ -33,8 +33,6 @@ export default async (opts = {}) => {
   };
   const nodes = document.querySelectorAll(options.selector);
 
-  if (nodes.length < 1) return;
-
   const { Suspense, lazy, createElement } = await import("react");
   const { createRoot } = await import("react-dom/client");
   const Manager = lazy(() => import("./manager"));
@@ -86,6 +84,10 @@ export default async (opts = {}) => {
       ...params,
     };
   });
+
+  // Return now if there are no components and no wrapper. This allows us to render the wrapper even
+  // if there are no components.
+  if (!wrapper && components.length < 1) return;
 
   const rootEle = document.createElement("div");
   document.body.append(rootEle);

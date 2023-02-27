@@ -32,7 +32,7 @@ const Portaled = ({
     if (debug && !shownDebugMsg) {
       shownDebugMsg = true;
       console.groupCollapsed(
-        `[proscenium/component-manager] Rendering %o`,
+        `[proscenium/component-manager] Rendering (portalled) %o`,
         path
       );
       console.log("domElement: %o", domElement);
