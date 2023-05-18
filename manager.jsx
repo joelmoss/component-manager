@@ -1,12 +1,29 @@
-import { Suspense, createElement, useState, useEffect, useMemo } from "react";
+import {
+  Suspense,
+  createElement,
+  useState,
+  useEffect,
+  useMemo,
+  Fragment,
+} from "react";
 import { createPortal } from "react-dom";
 
 const Manager = ({ components, wrapper, EachWrapper, debug }) => {
   const mappedComponents = components.map((comp, key) =>
     comp.lazy ? (
-      <Observed key={key} debug={debug} EachWrapper={EachWrapper} {...comp} />
+      <Observed
+        key={key}
+        debug={debug}
+        EachWrapper={EachWrapper || Fragment}
+        {...comp}
+      />
     ) : (
-      <Portaled key={key} debug={debug} EachWrapper={EachWrapper} {...comp} />
+      <Portaled
+        key={key}
+        debug={debug}
+        EachWrapper={EachWrapper || Fragment}
+        {...comp}
+      />
     )
   );
 

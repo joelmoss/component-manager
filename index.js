@@ -1,7 +1,5 @@
 /* eslint-disable no-console */
 
-import { Fragment } from "react";
-
 /**
  * Initialize the component manager by creating a single React root in a div that is appended to the
  * document body, and rendering the `Manager` component within it. If no component skels are found
@@ -33,24 +31,33 @@ export default async (opts = {}) => {
   };
   const nodes = document.querySelectorAll(options.selector);
 
-  const { Suspense, lazy, createElement } = await import("react");
-  const { createRoot } = await import("react-dom/client");
-  const Manager = lazy(() => import("./manager"));
-
-  let wrapper;
   if (options.wrapWithComponent) {
-    wrapper = buildImport(options.wrapWithComponent);
+    options.wrapWithComponent = buildImport(options.wrapWithComponent);
     if (typeof wrapper === "undefined") {
       console.warn(
         "[@proscenium/component-manager] `wrapWithComponent` option was passed to `init()` with an",
         "invalid type, so is ignored. Ensure it is a String, import(), or function."
       );
-    } else {
-      wrapper = lazy(wrapper);
     }
   }
 
-  let EachWrapper = Fragment;
+  // Return now if there are no nodes and no wrapper. This allows us to render the wrapper even
+  // if there are no components.
+  if (!options.wrapWithComponent && nodes.length < 1) return;
+
+  init(nodes, options);
+};
+
+async function init(nodes, options) {
+  const { Suspense, lazy, createElement } = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const Manager = lazy(() => import("./manager"));
+
+  const wrapper = options.wrapWithComponent
+    ? lazy(options.wrapWithComponent)
+    : undefined;
+
+  let EachWrapper;
   if (options.wrapEachWithComponent) {
     EachWrapper = buildImport(options.wrapEachWithComponent);
     if (typeof EachWrapper === "undefined") {
@@ -103,7 +110,7 @@ export default async (opts = {}) => {
       })
     )
   );
-};
+}
 
 function buildImport(imp) {
   if (typeof imp == "string") {
