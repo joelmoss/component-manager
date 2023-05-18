@@ -33,7 +33,7 @@ export default async (opts = {}) => {
 
   if (options.wrapWithComponent) {
     options.wrapWithComponent = buildImport(options.wrapWithComponent);
-    if (typeof wrapper === "undefined") {
+    if (typeof options.wrapWithComponent === "undefined") {
       console.warn(
         "[@proscenium/component-manager] `wrapWithComponent` option was passed to `init()` with an",
         "invalid type, so is ignored. Ensure it is a String, import(), or function."
