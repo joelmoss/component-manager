@@ -1,78 +1,39 @@
 /* eslint-disable no-console */
 
 /**
- * Initialize the component manager by creating a single React root in a div that is appended to the
- * document body, and rendering the `Manager` component within it. If no component skels are found
- * in the document, nothing will be rendered.
+ * Initialize the component manager by creating a React root for each component found on the page.
+ * If no component skels are found in the document, nothing will be rendered.
  *
  * @param {Object} options
- * @param {string} options.selector - A string containing one or more selectors to match against.
- *   Each match will be loaded as a component. Default: '.componentManagedByProscenium'.
  * @param {function} options.buildComponentPath - If defined, will be called with the component
  *   path, and should return a new path. Can be used to rewrite the import path of components.
- * @param {string,Promise,Function} options.wrapWithComponent - Wrap each component with another.
- *   If a String, it should be a path to a module that will be dynamically imported and wrapped with
- *   React's `lazy` helper.
- *   If a function, that function should return a dynamic `import()` of the component you want to
- *   wrap with.
- *   If a promise, it should be result of a dynamic `import()`.
- * @param {string,Promise,Function} options.wrapEachWithComponent - Like options.wrapWithComponent
- *   above, but wraps each and every component.
  * @param {boolean} options.debug - Will output debugging info to the console. Default: false.
  */
 export default async (opts = {}) => {
   const options = {
     debug: false,
-    selector: ".componentManagedByProscenium",
     buildComponentPath(x) {
       return x;
     },
     ...opts,
   };
-  const nodes = document.querySelectorAll(options.selector);
+  const component = document.querySelectorAll("[data-proscenium-component]");
 
-  if (options.wrapWithComponent) {
-    options.wrapWithComponent = buildImport(options.wrapWithComponent);
-    if (typeof options.wrapWithComponent === "undefined") {
-      console.warn(
-        "[@proscenium/component-manager] `wrapWithComponent` option was passed to `init()` with an",
-        "invalid type, so is ignored. Ensure it is a String, import(), or function."
-      );
-    }
-  }
+  // Return now if there are no components.
+  if (component.length < 1) return;
 
-  // Return now if there are no nodes and no wrapper. This allows us to render the wrapper even
-  // if there are no components.
-  if (!options.wrapWithComponent && nodes.length < 1) return;
-
-  init(nodes, options);
+  init(component, options);
 };
 
-async function init(nodes, options) {
+async function init(component, options) {
   const { Suspense, lazy, createElement } = await import("react");
   const { createRoot } = await import("react-dom/client");
-  const Manager = lazy(() => import("./manager"));
-
-  const wrapper = options.wrapWithComponent
-    ? lazy(options.wrapWithComponent)
-    : undefined;
-
-  let EachWrapper;
-  if (options.wrapEachWithComponent) {
-    EachWrapper = buildImport(options.wrapEachWithComponent);
-    if (typeof EachWrapper === "undefined") {
-      console.warn(
-        "[@proscenium/component-manager] `wrapEachWithComponent` option was passed to `init()` with an",
-        "invalid type, so is ignored. Ensure it is a String, import(), or function."
-      );
-    } else {
-      EachWrapper = lazy(EachWrapper);
-    }
-  }
 
   // Find our components to load.
-  const components = Array.from(nodes, (domElement) => {
-    const { path, props, ...params } = JSON.parse(domElement.dataset.component);
+  const components = Array.from(component, (domElement) => {
+    const { path, props, ...params } = JSON.parse(
+      domElement.dataset.prosceniumComponent
+    );
     const cpath = options.buildComponentPath(path);
 
     if (options.debug) {
@@ -83,41 +44,32 @@ async function init(nodes, options) {
       console.groupEnd();
     }
 
-    return {
-      component: lazy(() => import(cpath)),
-      path: cpath,
-      props,
-      domElement,
-      ...params,
-    };
+    const root = createRoot(domElement);
+
+    if (params.lazy) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            observer.unobserve(domElement);
+
+            root.render(
+              createElement(
+                lazy(() => import(cpath)),
+                props
+              )
+            );
+          }
+        });
+      });
+
+      observer.observe(domElement);
+    } else {
+      root.render(
+        createElement(
+          lazy(() => import(cpath)),
+          props
+        )
+      );
+    }
   });
-
-  // Return now if there are no components and no wrapper. This allows us to render the wrapper even
-  // if there are no components.
-  if (!wrapper && components.length < 1) return;
-
-  const rootEle = document.createElement("div");
-  document.body.append(rootEle);
-  createRoot(rootEle).render(
-    createElement(
-      Suspense,
-      null,
-      createElement(Manager, {
-        components,
-        wrapper,
-        EachWrapper,
-        debug: options.debug,
-      })
-    )
-  );
-}
-
-function buildImport(imp) {
-  if (typeof imp == "string") {
-    return () => import(imp);
-  } else if (imp instanceof Promise) {
-    return () => imp;
-  } else if (typeof imp == "function") {
-    return imp;
-  }
 }

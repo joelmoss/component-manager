@@ -43,6 +43,7 @@ const Portaled = ({
   props,
 }) => {
   const content = domElement.hasChildNodes() && domElement.firstElementChild;
+  console.log(content);
   let shownDebugMsg = false;
 
   useEffect(() => {
@@ -104,13 +105,15 @@ const Observed = ({
 };
 
 const Fallback = ({ content }) => {
+  console.log("fallback");
   if (content) {
     content.remove();
   } else {
     return null;
   }
+  console.log("fallback2");
 
   return <div dangerouslySetInnerHTML={{ __html: content.outerHTML }} />;
 };
 
-export default Manager;
+export { Manager, Observed, Portaled };

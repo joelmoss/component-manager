@@ -41,10 +41,8 @@ By default, components are only loaded and rendered when coming into view using 
 ## Example
 
 ```html
-<div
-  class="componentManagedByProscenium"
-  data-component="{\"path\":\"my/component\",\"lazy\":true,\"props\":{\"name\":\"Joel\"}}">
-  loading...
+<div data-proscenium-component="{\"path\":\"my/component\",\"lazy\":true,\"props\":{\"name\":\"Joel\"}}">
+    <div>loading...</div>
 </div>
 ```
 
@@ -67,7 +65,7 @@ init({
   wrapEachWithComponent: '/my/each/component.jsx',
 
   // The Node selector to use for querying for components.
-  selector: '.componentManagedByProscenium',
+  selector: '[data-proscenium-component]',
 
   // A function that accepts the component path, and should return a new path. This allows you to
   // rewrite the import path to your components.
